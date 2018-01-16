@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+mono --debug ~/Projects/size-diff/bin/Debug/*.exe "$@"
+
