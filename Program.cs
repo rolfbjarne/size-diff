@@ -30,8 +30,9 @@ class MainClass
 				}
 
 				// Remove trailing slashes
+				dirs [i] = Path.GetFullPath (dirs [i]);
 				if (dirs [i] [dirs [i].Length - 1] == Path.DirectorySeparatorChar)
-					dirs [i] = dirs [i].Substring (dirs [i].Length - 1);
+					dirs [i] = dirs [i].Substring (0, dirs [i].Length - 1);
 			}
 
 			var files = new List<List<FileInfo>> ();
