@@ -54,7 +54,7 @@ class MainClass
 			var lines = new List<string> ();
 			var maxFileLength = allFiles.Max ((v) => v.Length);
 
-			string line_format = "|{0,-" + maxFileLength + "} | {1,15} | {2,15} | {3,12} |";
+			string line_format = "|{0,-" + maxFileLength + "} | {1,15} | {2,15} | {3,12} | {4,-9} |";
 
 			foreach (var file in allFiles.OrderBy ((v) => v)) {
 				var before_name = Path.Combine (dirs [0], file);
@@ -65,12 +65,12 @@ class MainClass
 
 				if (after == null) {
 					// file was deleted
-					line = string.Format (line_format, file, FormatSize (before.Length), "*deleted*", FormatSize (-before.Length));
+					line = string.Format (line_format, file, FormatSize (before.Length), "*deleted*", FormatSize (-before.Length), "");
 				} else if (before == null) {
 					// new file
-					line = string.Format (line_format, file, "*new*", FormatSize (after.Length), FormatSize (after.Length));
+					line = string.Format (line_format, file, "*new*", FormatSize (after.Length), FormatSize (after.Length), "");
 				} else {
-					line = string.Format (line_format, file, FormatSize (before.Length), FormatSize (after.Length), FormatSize (after.Length - before.Length));
+					line = string.Format (line_format, file, FormatSize (before.Length), FormatSize (after.Length), FormatSize (after.Length - before.Length), (after.Length == before.Length && FileEquals (before.FullName, after.FullName) ? "Yes" : "No"));
 				}
 				lines.Add (line);
 			}
@@ -80,15 +80,15 @@ class MainClass
 			Console.WriteLine ("* Before: {0}", dirs [0]);
 			Console.WriteLine ("* After: {0}", dirs [1]);
 			Console.WriteLine ();
-			Console.WriteLine (line_format, "Path", "Before", "After", "Diff");
-			Console.WriteLine (line_format, ":" + new string ('-', maxFileLength - 1), "------:", "------:", "------:");
+			Console.WriteLine (line_format, "Path", "Before", "After", "Size Diff", "Identical");
+			Console.WriteLine (line_format, ":" + new string ('-', maxFileLength - 1), "------:", "------:", "------:", ":-----:");
 			lines.Sort ();
 			for (int i = 0; i < lines.Count; i++)
 				Console.WriteLine (lines [i]);
 
 			var sumBefore = befores.Sum ((v) => v.Length);
 			var sumAfter = afters.Sum ((v) => v.Length);
-			Console.WriteLine (line_format, "**Total**", $"**{FormatSize (sumBefore)}**", $"**{FormatSize (sumAfter)}**", $"**{FormatSize (sumAfter - sumBefore)}**");
+			Console.WriteLine (line_format, "**Total**", $"**{FormatSize (sumBefore)}**", $"**{FormatSize (sumAfter)}**", $"**{FormatSize (sumAfter - sumBefore)}**", "");
 
 			return 0;
 		} catch (Exception e) {
@@ -100,5 +100,28 @@ class MainClass
 	static string FormatSize (long length)
 	{
 		return length.ToString ("#,#");
+	}
+
+	static bool FileEquals (string a, string b)
+	{
+		var x = new byte [4096 * 10];
+		var y = new byte [x.Length];
+
+		using (var fa = new FileStream (a, FileMode.Open, FileAccess.Read, FileShare.Write, x.Length)) {
+			using (var fb = new FileStream (b, FileMode.Open, FileAccess.Read, FileShare.Write, y.Length)) {
+				int r;
+
+				while ((r = fa.Read (x, 0, x.Length)) > 0) {
+					if (fb.Read (y, 0, y.Length) != r)
+						return false;
+
+					for (int i = 0; i < x.Length; i++)
+						if (x [i] != y [i])
+							return false;
+				}
+			}
+		}
+
+		return true;
 	}
 }
